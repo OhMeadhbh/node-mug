@@ -1,0 +1,27 @@
+{
+  "name": "node-mug",
+  "description": "Use /dev/urandom (or /dev/random) to generate RFC 4122 Version 4 (random) UUIDs.",
+  "maintainers": [
+    {
+      "name": "Meadhbh Hamrick",
+      "email": "OhMeadhbh@gmail.com",
+      "web": "http://meadhbh.org/"
+    }
+  ],
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/OhMeadhbh/node-mug/raw/master/LICENSE"
+    }
+  ],
+  "repositories": [
+    {
+      "type": "git",
+      "url": "https://github.com/OhMeadhbh/node-mug"
+    }
+  ],
+  "directories": [ "test" ],
+  "version": "0.0.1",
+  "main": "./node-mug.js",
+  "keywords": ["uuid", "random"]
+}
