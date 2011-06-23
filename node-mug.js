@@ -19,9 +19,9 @@
         this.buffer = buffer;
     }
 
-    uuid.prototype.makeRandom = function () {
-        this.buffer[ 8 ] = ( this.buffer[ 8 ] & 0x3F ) | 0x80;
-        this.buffer[ 6 ] = ( this.buffer[ 6 ] & 0x0F ) | 0x40;
+    var makeRandom = function ( buffer ) {
+        buffer[ 8 ] = ( buffer[ 8 ] & 0x3F ) | 0x80;
+        buffer[ 6 ] = ( buffer[ 6 ] & 0x0F ) | 0x40;
     };
 
     uuid.prototype.toString = function () {
@@ -53,64 +53,101 @@
     function generator ( options, fd ) {
         this.options = options;
         this.fd = fd;
+        this.seek = 0;
     }
 
-    generator.prototype.generate = function ( callback ) {
-        var buffer = new Buffer(16);
-        var bytesReadTotal = 0;
+    generator.prototype.generate = function ( callback, target ) {
+        var localSeek = this.seek;
+        this.seek += 16;
+        var localRead = 0;
+        var localFd = this.fd;
         
-        var readCallback = function ( err, bytesRead, buf ) {
+        if( ! target ) {
+            target = new Buffer( 16 );
+        }
+
+        var readCallback = function ( err, read, buffer ) {
             if( err ) {
-                throw( "error generating UUID: " + err );
+                throw( err );
             } else {
-                bytesReadTotal += bytesRead;
-                if( bytesReadTotal < 16 ) {
-                    fs.read( this.fd,  buffer, bytesReadTotal,
-                             16 - bytesReadTotal, null, readCallback );
+                localRead += read;
+                localSeek += read;
+                if( localRead < 16 ) {
+                    fs.read( localFd, buffer, localRead, 16 - localRead, localSeek + localRead, readCallback );
                 } else {
-                    var u = new uuid( buffer );
-                    u.makeRandom();
-                    callback && callback( u );
+                    makeRandom( buffer );
+                    callback( new uuid( buffer ) );
                 }
             }
         };
 
-        fs.read( this.fd, buffer, 0, 16, null, readCallback );
+        readCallback( null, 0, target );
+        
     };
 
-    generator.prototype.nullUUID = function () {
-        var buffer = new Buffer(16);
-        for( var i = 0; i < 16; i++ ) {
-            buffer[i] = 0;
-        }
-        return( new uuid( buffer ) );
-    };
+    mug.TIME   = 1;
+    mug.MD5    = 3;
+    mug.RANDOM = 4;
+    mug.SHA1   = 5;
+
+    var nullUUIDBuffer = new Buffer(16);
+    for( var i = 0; i < 16; i++ ) {
+        nullUUIDBuffer[i] = 0;
+    }
+    
+    mug.NullUUID = new uuid( nullUUIDBuffer );
 
     mug.createInstance = function ( options, callback ) {
-        var source;
         
-        if( 'function' == typeof( options ) ) {
+        if( 'function' === typeof( options ) ) {
             callback = options;
             options = {};
         }
 
-        if( options && options.source ) {
-            source = options.source;
-        } else {
-            source = '/dev/urandom';
+        if( ! options ) {
+            options = {};
         }
 
-        var openCallback = function ( err, fd ) {
-            if( !err && callback ) {
-                callback( new generator( {source: source}, fd ) );
-            } else {
-                if( fd ) {
-                    fs.close(fd);
+        if( ! options.version ) {
+            options.version = this.RANDOM;
+        }
+
+        var randomConstructor = function( options, callback ) {
+            
+            if( ! options.source ) {
+                options.source = '/dev/urandom';
+            } 
+            
+            var openCallback = function ( err, fd ) {
+                if( !err && callback ) {
+                    callback( new generator( options, fd ) );
+                } else {
+                    if( fd ) {
+                        fs.close(fd);
+                    }
+                    throw( err );
                 }
-                throw( err );
-            }
+            };
+
+            fs.open( options.source, 'r', 0666, openCallback );
         };
 
-        fs.open( source, 'r', 0666, openCallback );
+        switch( options.version ) {
+            case this.TIME:
+            break;
+            
+            case this.MD5:
+            break;
+            
+            case this.RANDOM:
+            randomConstructor( options, callback );
+            break;
+            
+            case this.SHA1:
+            break;
+            
+            default:
+            break;
+        }
     };
 }());
