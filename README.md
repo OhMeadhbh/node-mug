@@ -46,6 +46,17 @@ that includes toString() and toURI():
         console.log( uuid.toURN() );
      });</pre>
 
+The uuid() call will usually allocate a new buffer to hold the UUID. If you
+want to use a pre-allocated buffer, you can pass it as the second parameter
+to the uuid() call. UUID buffers must be at least 16 octets.
+
+<pre>    var uuidBuffer = new Buffer( 16 );
+
+    UUIDGenerator.uuid( function ( uuid ) {
+        console.log( uuid.toString() );
+        console.log( uuid.toURN() );
+     }, uuidBuffer );</pre>
+
 So, putting it all together, here's a program that generates 10 UUIDs:
 
 <pre>    var mug = require('node-mug');
@@ -61,3 +72,15 @@ So, putting it all together, here's a program that generates 10 UUIDs:
     };
 
     mug.createInstance( createCallback );</pre>
+
+## Testing
+
+There is an expresso-based test and a non expresso based test. Before
+running either, cd into the test directory. For the expresso test, use
+the command:
+
+<pre>    expresso testMug.js</pre>
+
+For the non-expresso test, use this command:
+
+<pre>    node nonExpressoTest.js</pre>
