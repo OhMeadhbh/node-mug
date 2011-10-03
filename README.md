@@ -170,4 +170,4 @@ the command:
 
 For the non-expresso test, use this command:
 
-<pre>    node nonExpressoTest.js</pre>
+<pre>    node test/nonExpressoTest.js</pre>
