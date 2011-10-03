@@ -69,7 +69,7 @@ object with a version element set to mug.MD5 or mug.SHA1:
         V3Generator = g;
     };
     
-    mug.createInstance( {version: mug.MD5}, V4createCallback );</pre>
+    mug.createInstance( {version: mug.MD5}, V3createCallback );</pre>
     
 And here's an example of creating a SHA1 name based UUID generator:
 
@@ -151,7 +151,7 @@ package as NullUUID. The following example demonstrates its use:
 
 <pre>    var mug = require('node-mug');
 
-console.log( mug.NullUUID.toString() );</pre>
+    console.log( mug.NullUUID.toString() );</pre>
 
 ### Cleaning Up
 
