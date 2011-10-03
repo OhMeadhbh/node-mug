@@ -8,6 +8,7 @@
 
 (function() {
     var fs = require('fs');
+    var crypto = require('crypto');
     var hexString = "0123456789abcdef";
     var mug = {};
 
@@ -19,9 +20,19 @@
         this.buffer = buffer;
     }
 
-    var makeRandom = function ( buffer ) {
-        buffer[ 8 ] = ( buffer[ 8 ] & 0x3F ) | 0x80;
-        buffer[ 6 ] = ( buffer[ 6 ] & 0x0F ) | 0x40;
+    uuid.prototype.makeRandom = function ( ) {
+        this.buffer[ 8 ] = ( this.buffer[ 8 ] & 0x3F ) | 0x80;
+        this.buffer[ 6 ] = ( this.buffer[ 6 ] & 0x0F ) | 0x40;
+    };
+
+    uuid.prototype.makeMD5= function ( ) {
+        this.buffer[ 8 ] = ( this.buffer[ 8 ] & 0x3F ) | 0x80;
+        this.buffer[ 6 ] = ( this.buffer[ 6 ] & 0x0F ) | 0x30;
+    };
+    
+    uuid.prototype.makeSHA1 = function ( ) {
+        this.buffer[ 8 ] = ( this.buffer[ 8 ] & 0x3F ) | 0x80;
+        this.buffer[ 6 ] = ( this.buffer[ 6 ] & 0x0F ) | 0x50;
     };
 
     uuid.prototype.toString = function () {
@@ -50,13 +61,13 @@
         return( this.urn );
     };
 
-    function generator ( options, fd ) {
+    function randomGenerator ( options, fd ) {
         this.options = options;
         this.fd = fd;
         this.seek = 0;
     }
 
-    generator.prototype.generate = function ( callback, target ) {
+    randomGenerator.prototype.generate = function ( callback, name, target ) {
         var localSeek = this.seek;
         this.seek += 16;
         var localRead = 0;
@@ -75,8 +86,9 @@
                 if( localRead < 16 ) {
                     fs.read( localFd, buffer, localRead, 16 - localRead, localSeek + localRead, readCallback );
                 } else {
-                    makeRandom( buffer );
-                    callback( new uuid( buffer ) );
+                    var u = new uuid( buffer );
+                    u.makeRandom();
+                    callback( u );
                 }
             }
         };
@@ -84,7 +96,65 @@
         readCallback( null, 0, target );
         
     };
+    
+    randomGenerator.prototype.close = function ( callback ) {
+        fs.close( this.fd, callback );
+    };
 
+    function md5Generator ( options ) {
+        this.options = options;
+    } 
+    
+    md5Generator.prototype.generate = function ( callback, name, target ) {
+        var hash;
+        var digest;
+        
+        if( ! target ) {
+            target = new Buffer(16);
+        }
+        
+        hash = crypto.createHash( 'md5' );
+        hash.update( name );
+        digest = hash.digest('binary');
+
+        target.write( digest, 0, 'binary' );
+        var u = new uuid( target );
+        u.makeMD5();
+        
+        callback( u );
+    };
+    
+    md5Generator.prototype.close = function ( callback ) {
+        callback();
+    };
+    
+    function sha1Generator ( options ) {
+        this.options = options;
+    } 
+    
+    sha1Generator.prototype.generate = function ( callback, name, target ) {
+        var hash;
+        var digest;
+        
+        if( ! target ) {
+            target = new Buffer(20);
+        }
+        
+        hash = crypto.createHash( 'sha1' );
+        hash.update( name );
+        digest = hash.digest('binary');
+
+        target.write( digest, 0, 'binary' );
+        var u = new uuid( target );
+        u.makeSHA1( );
+        
+        callback( u );
+    };
+
+    sha1Generator.prototype.close = function ( callback ) {
+        callback();
+    };
+    
     mug.TIME   = 1;
     mug.MD5    = 3;
     mug.RANDOM = 4;
@@ -95,10 +165,12 @@
         nullUUIDBuffer[i] = 0;
     }
     
+    mug.uuid = uuid;
+    
     mug.NullUUID = new uuid( nullUUIDBuffer );
 
     mug.createInstance = function ( options, callback ) {
-        
+
         if( 'function' === typeof( options ) ) {
             callback = options;
             options = {};
@@ -120,7 +192,7 @@
             
             var openCallback = function ( err, fd ) {
                 if( !err && callback ) {
-                    callback( new generator( options, fd ) );
+                    callback( new randomGenerator( options, fd ) );
                 } else {
                     if( fd ) {
                         fs.close(fd);
@@ -131,12 +203,16 @@
 
             fs.open( options.source, 'r', 0666, openCallback );
         };
+        
+        var md5Constructor = function ( options, callback ) {
+        };
 
         switch( options.version ) {
             case this.TIME:
             break;
             
             case this.MD5:
+            callback && callback( new md5Generator( options ) );
             break;
             
             case this.RANDOM:
@@ -144,6 +220,7 @@
             break;
             
             case this.SHA1:
+            callback && callback( new sha1Generator( options ) );
             break;
             
             default:

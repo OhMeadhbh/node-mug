@@ -59,7 +59,7 @@ function testRandomGenerator( g, source ) {
     assert.equal( source, g.options.source );
     assert.equal( 'number', typeof( g.options.version ) );
     assert.equal( mug.RANDOM, g.options.version );
-};
+}
 
 var defaultGeneratorCallback = function ( g ) {
 
@@ -85,41 +85,145 @@ mug.createInstance( {version: mug.RANDOM}, defaultGeneratorCallback );
 console.log( '%MUGT-I-NONSTANDARD; Testing non-standard source for random uuids' );
 
 var count = 0;
-var uuids = {};
-var uuidFixtures = [
-                    'e0244b5c-41dc-45fa-a114-40c95d72eba7',
-                    'b4e5d92a-9216-4afa-b862-b3f156af8804',
-                    'f39f1baa-8633-44b6-a891-80799f002f79',
-                    'c9d0c50a-d25b-41f9-8545-b5f60d2b9a66',
-                    'cbfc2c18-2aa9-49f2-bb8b-16cd2980b1da',
-                    '57b0a436-65f2-4f82-a0a1-d70ae46281bb',
-                    '426a2b4a-6a8b-4390-8293-c9ebc4fae846',
-                    '902beed8-ebe9-4f65-bfa5-2906cdf6c89c',
-                    'bc272954-0ec3-4cb6-b7f6-ea1691783361',
-                    'dd270ec1-91dc-467e-a6fc-e1e71ec2ba8c'
-                    ];
+var fixtures = [
+                    { expected: 'e0244b5c-41dc-45fa-a114-40c95d72eba7' }
+                    , { expected: 'b4e5d92a-9216-4afa-b862-b3f156af8804' }
+                    , { expected: 'f39f1baa-8633-44b6-a891-80799f002f79' }
+                    , { expected: 'c9d0c50a-d25b-41f9-8545-b5f60d2b9a66' }
+                    , { expected: 'cbfc2c18-2aa9-49f2-bb8b-16cd2980b1da' }
+                    , { expected: '57b0a436-65f2-4f82-a0a1-d70ae46281bb' }
+                    , { expected: '426a2b4a-6a8b-4390-8293-c9ebc4fae846' }
+                    , { expected: '902beed8-ebe9-4f65-bfa5-2906cdf6c89c' }
+                    , { expected: 'bc272954-0ec3-4cb6-b7f6-ea1691783361' }
+                    , { expected: 'dd270ec1-91dc-467e-a6fc-e1e71ec2ba8c' }
+                ];
 
 var nonstandardTestCallback = function ( uuid ) {
-    var key = uuid.toString();
-    uuids[ key ] = uuid;
     count++;
-
-    if( 10 == count ) {
-        var uuidKeys = Object.keys( uuids );
-        for( var i = 0, il = uuidKeys.length; i < il; i++ ) {
-            var currentKey  = uuidKeys[ i ];
-            var currentUUID = uuids[ currentKey ];
-            assert.equal( currentKey, currentUUID.toString() );
+    if( 10 == fixtures.length ) {
+        for( var i = 0, il = fixtures.length; i < il; i++ ) {
+            var testThis = new mug.uuid( fixtures[i].buffer );
+            testThis.makeRandom();
+            assert.equal( testThis.toString(), fixtures[i].expected );
         }
     }
 };
 
 var nonstandardGenerateCallback = function( g ) {
     // generate 10 UUID objects
-    for( i = 0; i < 10; i++ ) {
-        g.generate( nonstandardTestCallback );
+    for( i = 0, il = fixtures.length ; i < il; i++ ) {
+        fixtures[i].buffer = new Buffer(16);
+        g.generate( nonstandardTestCallback, null, fixtures[i].buffer );
     }
 };
 
-mug.createInstance( {source:'entropy.bin'}, nonstandardGenerateCallback );
+mug.createInstance( {source:'test/entropy.bin'}, nonstandardGenerateCallback );
 
+// Now let's test the "name based" UUID generators. These generators take
+// some input, hash it and then coerce it into a UUID object.
+
+// Let's start with MD5.
+
+console.log( "%MUGT-I-MD5; Testing MD5 (name based) UUID generation." );
+
+var md5GeneratorCallback = function ( g ) {
+
+    // Test that the generator was properly instantiated
+    assert.equal( 'object', typeof( g ) );
+    assert.equal( 'object', typeof( g.options ) );
+    assert.equal( 'number', typeof( g.options.version ) );
+    assert.equal( mug.MD5, g.options.version );
+    
+    // Here are some fixtures (from section A.5 of RFC1321
+    var fixtures = [
+        {
+            input: ''
+            , expected: 'd41d8cd9-8f00-3204-a980-0998ecf8427e'
+        }
+        , {
+            input: 'a'
+            , expected: '0cc175b9-c0f1-36a8-b1c3-99e269772661'
+        }
+        , {
+            input: 'abc'
+            , expected: '90015098-3cd2-3fb0-9696-3f7d28e17f72'
+        }
+        , {
+            input: 'message digest'
+            , expected: 'f96b697d-7cb7-338d-925a-2f31aaf161d0'
+        }
+        , {
+            input: 'abcdefghijklmnopqrstuvwxyz'
+            , expected: 'c3fcd3d7-6192-3400-bdfb-496cca67e13b'
+        }
+        , {
+            input: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+            , expected: 'd174ab98-d277-39f5-a561-1c2c9f419d9f'
+        }
+        , {
+            input: '12345678901234567890123456789012345678901234567890123456789012345678901234567890'
+            , expected: '57edf4a2-2be3-3955-ac49-da2e2107b67a'
+        }
+    ];
+    
+    for( var i = 0, il = fixtures.length; i < il; i++ ) {
+        g.generate( function( uuid ) {
+            assert.equal( fixtures[i].expected, uuid.toString() );
+            }, fixtures[i].input );
+    }
+
+};
+
+mug.createInstance( {version: mug.MD5}, md5GeneratorCallback );
+
+// Now let's test the SHA1 uuid generation option.
+
+console.log( "%MUGT-I-SHA1; Testing SHA1 (name based) UUID generation." );
+
+var sha1GeneratorCallback = function ( g ) {
+    // Test that the generator was properly instantiated
+
+    assert.equal( 'object', typeof( g ) );
+    assert.equal( 'object', typeof( g.options ) );
+    assert.equal( 'number', typeof( g.options.version ) );
+    assert.equal( mug.SHA1, g.options.version );
+    
+    // Here are some fixtures (from appendix A of FIPS-180-2)
+    var fixtures = [
+        {
+            input: 'abc'
+            , expected: 'a9993e36-4706-516a-ba3e-25717850c26c'
+        }
+        , {
+            input: 'abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq'
+            , expected: '84983e44-1c3b-526e-baae-4aa1f95129e5'
+        } 
+    ];
+    
+    for( var i = 0, il = fixtures.length; i < il; i++ ) {
+        g.generate( function( uuid ) {
+            assert.equal( fixtures[i].expected, uuid.toString() );
+            }, fixtures[i].input );
+    }
+};
+
+mug.createInstance( {version: mug.SHA1}, sha1GeneratorCallback );
+
+// Time based UUIDs aren't supported at this moment. But if they were, this
+// is how you would use them.
+
+var timeGeneratorCallback = function ( g ) {
+    // Test that the generator was properly instantiated
+
+    assert.equal( 'object', typeof( g ) );
+    assert.equal( 'object', typeof( g.options ) );
+    assert.equal( 'number', typeof( g.options.version ) );
+    assert.equal( mug.TIME, g.options.version );
+    
+};
+
+console.log( "%MUGT-E-TIME; Deferring time-based UUID generation." );
+
+mug.createInstance( {version: mug.TIME}, timeGeneratorCallback );
+
+console.log( "%MUGT-I-END; Ending UUID Generator Test." );
