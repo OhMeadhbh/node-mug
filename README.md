@@ -87,7 +87,7 @@ And here's an example of creating a SHA1 name based UUID generator:
 
 Once you have a generator, call the generate() function with a callback to
 generate UUIDs. The single parameter to the callback will be a UUID object
-that includes toString() and toURI():
+that includes toString() and toURN():
 
 <pre>    UUIDGenerator.generate( function ( uuid ) {
         console.log( uuid.toString() );
@@ -114,7 +114,7 @@ So, putting it all together, here's a program that generates 10 random UUIDs:
     };
 
     var createCallback = function( g ) {
-        for( i = 0; i < 10; i++ ) {
+        for( i = 0; i &lt; 10; i++ ) {
             g.generate( generatorCallback );
         }
     };
