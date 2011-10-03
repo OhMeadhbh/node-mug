@@ -94,16 +94,16 @@ that includes toString() and toURN():
         console.log( uuid.toURN() );
      });</pre>
 
-The uuid() call will usually allocate a new buffer to hold the UUID. If you
-want to use a pre-allocated buffer, you can pass it as the second parameter
-to the uuid() call. UUID buffers must be at least 16 octets.
+The generate() call will usually allocate a new buffer to hold the UUID. If you
+want to use a pre-allocated buffer, you can pass it as the third parameter
+to the generate() call. UUID buffers must be at least 16 octets.
 
 <pre>    var uuidBuffer = new Buffer( 16 );
 
     V4Generator.generate( function ( uuid ) {
         console.log( uuid.toString() );
         console.log( uuid.toURN() );
-     }, uuidBuffer );</pre>
+     }, null, uuidBuffer );</pre>
 
 So, putting it all together, here's a program that generates 10 random UUIDs:
 
@@ -127,17 +127,19 @@ Generating name based UUIDs is similar to creating random UUIDs. The primary
 difference is you add a "name" parameter to the generate() call. The name
 is hashed and used to generate the UUID.
 
-This example will output two SHA1 name-based UUIDs:
+This example will output two SHA1 name-based UUIDs. The second call uses a
+pre-allocated buffer:
 
 <pre>    var mug = require('node-mug');
-
+    var uuidBuffer = new Buffer( 16 );
+    
     function generatorCallback ( uuid ) {
         console.log( uuid.toString() );
     }
     
     function createCallback ( generator ) {
         generator.generate( generatorCallback, "example 1" );
-        generator.generate( generatorCallback, "example 2" );
+        generator.generate( generatorCallback, "example 2", uuidBuffer );
     }
     
     mug.createInstance( {version: mug.MD5}, createCallback );</pre>
