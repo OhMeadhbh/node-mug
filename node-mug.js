@@ -16,6 +16,10 @@
         module.exports = mug;
     }
 
+    // uuid class - these are the things we return from calls to the uuid
+    // generator. The make{Random|MD5|etc.} methods munge bits in the buffer
+    // to set the version. 
+
     function uuid ( buffer ) {
         this.buffer = buffer;
     }
@@ -29,7 +33,7 @@
         this.buffer[ 8 ] = ( this.buffer[ 8 ] & 0x3F ) | 0x80;
         this.buffer[ 6 ] = ( this.buffer[ 6 ] & 0x0F ) | 0x30;
     };
-    
+
     uuid.prototype.makeSHA1 = function ( ) {
         this.buffer[ 8 ] = ( this.buffer[ 8 ] & 0x3F ) | 0x80;
         this.buffer[ 6 ] = ( this.buffer[ 6 ] & 0x0F ) | 0x50;
@@ -60,6 +64,10 @@
         }
         return( this.urn );
     };
+
+    // If a file descriptor is passed in, then we assume we're reading from
+    // a file. if fd is null or undefined, we assume we're reading our random
+    // bytes from crypto.randomBytes()
 
     function randomGenerator ( options, fd ) {
         this.options = options;
@@ -93,12 +101,28 @@
             }
         };
 
-        readCallback( null, 0, target );
-        
+        function randomCallback ( buffer ) {
+            crypto.randomBytes( 16, function ( ex, randomBuffer ) {
+                for( var i = 0; i < 16; i++ ) {
+                    buffer[i] = randomBuffer[i]
+                }
+                var u = new uuid( buffer );
+                u.makeRandom();
+                callback( u );
+            } );
+        }
+
+        if( this.fd ) {
+            readCallback( null, 0, target );
+        } else {
+            randomCallback( target );
+        }
     };
     
     randomGenerator.prototype.close = function ( callback ) {
-        fs.close( this.fd, callback );
+        if( this.fd ) {
+            fs.close( this.fd, callback );
+        }
     };
 
     function md5Generator ( options ) {
@@ -146,7 +170,7 @@
 
         target.write( digest, 0, 'binary' );
         var u = new uuid( target );
-        u.makeSHA1( );
+        u.makeSHA1();
         
         callback( u );
     };
@@ -185,23 +209,23 @@
         }
 
         var randomConstructor = function( options, callback ) {
-            
-            if( ! options.source ) {
-                options.source = '/dev/urandom';
-            } 
-            
-            var openCallback = function ( err, fd ) {
-                if( !err && callback ) {
-                    callback( new randomGenerator( options, fd ) );
-                } else {
-                    if( fd ) {
-                        fs.close(fd);
-                    }
-                    throw( err );
-                }
-            };
 
-            fs.open( options.source, 'r', 0666, openCallback );
+            if( ! options.source ) {
+                callback( new randomGenerator( options, null ) );
+            } else {
+                var openCallback = function ( err, fd ) {
+                    if( !err && callback ) {
+                        callback( new randomGenerator( options, fd ) );
+                    } else {
+                        if( fd ) {
+                            fs.close(fd);
+                        }
+                        throw( err );
+                    }
+                };
+
+                fs.open( options.source, 'r', 0666, openCallback );
+            }
         };
         
         var md5Constructor = function ( options, callback ) {

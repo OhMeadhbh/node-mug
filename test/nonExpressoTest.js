@@ -55,15 +55,14 @@ console.log( '%MUGT-I-RANDOM; Testing Random UUID functions' );
 function testRandomGenerator( g, source ) {
     assert.equal( 'object', typeof( g ) );
     assert.equal( 'object', typeof( g.options ) );
-    assert.equal( 'string', typeof( g.options.source ) );
-    assert.equal( source, g.options.source );
+    assert.equal( 'undefined', typeof( g.options.source ) );
     assert.equal( 'number', typeof( g.options.version ) );
     assert.equal( mug.RANDOM, g.options.version );
 }
 
 var defaultGeneratorCallback = function ( g ) {
 
-    testRandomGenerator( g, '/dev/urandom' );
+    testRandomGenerator( g, null );
     
     var randomTestCallback = function ( uuid ) {
         assert.equal( 'object', typeof( uuid ) );
