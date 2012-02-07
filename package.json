@@ -21,7 +21,7 @@
     }
   ],
   "directories": [ "test" ],
-  "version": "0.0.2",
+  "version": "0.0.6",
   "main": "./node-mug.js",
   "keywords": ["uuid", "random"]
 }
