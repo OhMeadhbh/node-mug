@@ -104,7 +104,7 @@
         function randomCallback ( buffer ) {
             crypto.randomBytes( 16, function ( ex, randomBuffer ) {
                 for( var i = 0; i < 16; i++ ) {
-                    buffer[i] = randomBuffer[i]
+                    buffer[i] = randomBuffer[i];
                 }
                 var u = new uuid( buffer );
                 u.makeRandom();
@@ -207,15 +207,19 @@
         if( ! options.version ) {
             options.version = this.RANDOM;
         }
+        
+        if( ! options.subject ) {
+        	options.subject = this;
+        }
 
         var randomConstructor = function( options, callback ) {
 
             if( ! options.source ) {
-                callback( new randomGenerator( options, null ) );
+                callback.apply( options.subject, [ new randomGenerator( options, null ) ] );
             } else {
                 var openCallback = function ( err, fd ) {
                     if( !err && callback ) {
-                        callback( new randomGenerator( options, fd ) );
+                        callback.apply( options.subject, [ new randomGenerator( options, fd ) ] );
                     } else {
                         if( fd ) {
                             fs.close(fd);
@@ -227,16 +231,13 @@
                 fs.open( options.source, 'r', 0666, openCallback );
             }
         };
-        
-        var md5Constructor = function ( options, callback ) {
-        };
 
         switch( options.version ) {
             case this.TIME:
             break;
             
             case this.MD5:
-            callback && callback( new md5Generator( options ) );
+            callback && callback.apply( options.subject, [ new md5Generator( options ) ] );
             break;
             
             case this.RANDOM:
@@ -244,7 +245,7 @@
             break;
             
             case this.SHA1:
-            callback && callback( new sha1Generator( options ) );
+            callback && callback.apply( options.subject, [ new sha1Generator( options ) ] );
             break;
             
             default:
