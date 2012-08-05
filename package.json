@@ -21,7 +21,7 @@
     }
   ],
   "directories": [ "test", "src" ],
-  "version": "0.0.7",
+  "version": "0.0.8",
   "main": "./node-mug.js",
   "keywords": ["uuid", "random", "hash", "time", "rfc4122"]
 }
