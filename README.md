@@ -1,7 +1,10 @@
 # node-mug (Meadhbh's UUID Generator)
 
-This package generates time-based, MD5-based, SHA1-based or cryptographically
-random RFC 4122 compliant UUIDs.
+* Generates all RFC 4122 UUID versions: time-base, hash-based, random
+* Able to use /dev/random (or any other entropy source file)
+* Properly increments v1 UUID clock field if successive timestamps are the same
+* Actually uses the hardware address to calculate v1 UUIDs
+* Supports multiple simultaneous UUID generators
 
 ## Installation
 

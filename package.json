@@ -1,6 +1,6 @@
 {
   "name": "node-mug",
-  "description": "Generate time-based, MD5, SHA1 or cryptographically random RFC 4122 compliant UUIDs",
+  "description": "Generate all RFC 4122 UUID versions: time-based, MD5, SHA1 or cryptographically random UUIDs. (RFC 4122 Compliant)",
   "maintainers": [
     {
       "name": "Meadhbh Hamrick",
@@ -21,7 +21,7 @@
     }
   ],
   "directories": [ "test", "src" ],
-  "version": "0.0.8",
+  "version": "0.9.1",
   "main": "./node-mug.js",
   "keywords": ["uuid", "random", "hash", "time", "rfc4122"]
 }
