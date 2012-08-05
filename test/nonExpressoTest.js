@@ -218,11 +218,32 @@ var timeGeneratorCallback = function ( g ) {
     assert.equal( 'object', typeof( g.options ) );
     assert.equal( 'number', typeof( g.options.version ) );
     assert.equal( mug.TIME, g.options.version );
+
+    var target = new Buffer( 16 );
+    var mock_mac = new Buffer( [ 0xAA, 0x55, 0x99, 0x66, 0x3C, 0xC3 ] );
     
+    var time =  mug.formatTime( target, 135634427112870000, mock_mac, 0 );
+    assert.equal( time.toString(), 'f7605070-5070-1760-8000-aa5599663cc3' );
+
+    time =  mug.formatTime( target, 135634427128910000, mock_mac, 255 );
+    assert.equal( time.toString(), 'f85510b0-10b0-1855-80ff-aa5599663cc3' );
+
+    g.generate( function ( uuid ) {
+	assert.equal( 'object', typeof( uuid ) );
+	var s = uuid.toString();
+	assert.equal( 'string', typeof( s ) );
+    } );
 };
 
-console.log( "%MUGT-E-TIME; Deferring time-based UUID generation." );
+console.log( "%MUGT-E-TIME; Testing time-based UUID generation." );
 
 mug.createInstance( {version: mug.TIME}, timeGeneratorCallback );
 
 console.log( "%MUGT-I-END; Ending UUID Generator Test." );
+
+/*
+135634427112870000
+f7605070-5070-1760-afd2-7071bc1d2a69
+135634427128910000
+f85510b0-10b0-1855-9b6d-7071bc1d2a69
+*/
